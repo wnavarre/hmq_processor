@@ -15,3 +15,7 @@ def print_question_response(fp, q, r):
             fp.write("<p><big><big>&#9745</big></big><strong> OTHER:</strong> {}</p>\n".format(e))
     else:
         string_stuff.format_paragraphs_as_html(r[q.code()] or "(NO ANSWER)", fp)
+
+def print_discussion(fp):
+    with open("./discussion.dat", "r") as discussion_file:
+        fp.write(discussion_file.read())

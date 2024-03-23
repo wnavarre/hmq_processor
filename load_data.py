@@ -16,7 +16,7 @@ class Question:
     ]
     def __init__(self, question_set, qdata, text, rank):
         if not qdata:
-            raise ValueError("No qdata for question: " + text)
+            raise ValueError("No qdata for question: {}".format(text))
         assert qdata
         assert text
         self._selection_options = None
@@ -24,6 +24,7 @@ class Question:
         self._raw_text = text
         self._rank = rank
         self._aux_of = None
+        text, _ = text
         is_aux = text.startswith("AUX")
         if is_aux:
             self._aux_of = question_set.main_for_aux()
@@ -121,7 +122,6 @@ class QuestionSet:
         return processed
     def __iter__(self): return iter(self._code_to_q.values())
     def insert(self, q):
-        print(q.code())
         text, code = q.raw_text(), q.code()
         if text in self._text_to_q: raise ValueError("Duplicate 'text' key: " + text)
         self._text_to_q[text] = q
@@ -139,24 +139,35 @@ def build_question_set(dqdata):
         rank += 1
     return qs
 
-QDATA_FIELD = "Timestamp"
+QDATA_FIELD = ("Timestamp", "_QDATA")
 QDATA_VALUE = "_QDATA"
 
 def without_field(d, field):
     del d[field]
     return d
 
+class DictMaker:
+    __slots__ = ("_keys",)
+    def __init__(self, keys): self._keys = keys
+    def __call__(self, values):
+        assert len(self._keys) == len(values)
+        return { k : v for k, v in zip(self._keys, values) }
+    def it_to_it(self, it):
+        for e in it: yield self(e)
+
 def load(fname="./cleaned_up.csv"):
     with open(fname, 'r') as fp:
-        reader = csv.DictReader(fp)
+        reader = csv.reader(fp)
+        heading_row = next(reader)
+        column_count = len(heading_row)
         first_row = next(reader)
-        assert first_row[QDATA_FIELD] == QDATA_VALUE
-        del first_row[QDATA_FIELD]
-        for e in first_row:
-            print(e[0:15])
+        assert len(first_row) == column_count
+        assert first_row[0] == QDATA_VALUE
+        as_dict = DictMaker(tuple(zip(heading_row, first_row)))
+        q_out = build_question_set(without_field(as_dict(first_row), QDATA_FIELD))
+        reader = as_dict.it_to_it(reader)
         second_row = next(reader)
         assert second_row[QDATA_FIELD] == "_QDATA_SELECT"
-        q_out = build_question_set(first_row)
         q_out.read_selection(second_row)
         r_out = [ q_out.process_response(without_field(row, QDATA_FIELD)) for row in reader ]
         return q_out, r_out

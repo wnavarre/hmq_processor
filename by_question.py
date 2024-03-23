@@ -4,8 +4,9 @@ from string_stuff import *
 import common_print
 
 def body(office, fp):
-    fp.write("    <img src=\"./hml.jpg\" class=\"logo\" />\n")
+    fp.write("    <img src=\"./hml.jpg\" class=\"logo_top\" />\n")
     fp.write("    <h1>2024 Housing Medford Questionnaire: Candidates for {}, arranged by question</h1>\n".format(office))
+    common_print.print_discussion(fp)
     fp.write("    <h2>Index</h2>\n")
     qs, rs = load_data.load()
     rs.sort(key=lambda r: last_name(r["NAME"]))
@@ -53,14 +54,13 @@ def body(office, fp):
             fp.write("    <h3>{} [<a href=\"#QQ{}\">QUESTION</a>]</h3>\n".format(r["NAME"], q.code()))
             if q.is_aux():
                 main_q = q.aux_of()
-                print("OFFICE: {}".format(office))
                 fp.write("    <p>[ Answer to <a href=\"#QQ{}\">main question</a>: {} ]</p>".format(
                     main_q.code(),
                     r[main_q.code()]
                 ))
             common_print.print_question_response(fp, q, r)
     if open_question_div: fp.write("</div>\n")
-    fp.write("    <img src=\"./hml.jpg\" class=\"logo\" />\n")
+    fp.write("    <img src=\"./hml.jpg\" class=\"logo_bottom\" />\n")
 
 def go(fp, office):
     fp.write("<html>\n")
@@ -75,3 +75,4 @@ def go(fp, office):
 if __name__ == "__main__":
     with open("sc_by_question.html", 'w+') as fp: go(fp, "School Committee")
     with open("cc_by_question.html", 'w+') as fp: go(fp, "City Council")
+    with open("mayor_by_question.html", 'w+') as fp: go(fp, "Mayor")
